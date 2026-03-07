@@ -419,3 +419,26 @@ describe("Keybind.parse", () => {
     ])
   })
 })
+
+describe("Keybind.fromParsedKey", () => {
+  test("normalizes kitty space key names for matching", () => {
+    const parsed = Keybind.fromParsedKey(
+      {
+        name: " ",
+        ctrl: false,
+        meta: false,
+        shift: false,
+        option: false,
+        sequence: " ",
+        number: false,
+        raw: " ",
+        eventType: "press",
+        source: "kitty",
+      },
+      false,
+    )
+
+    expect(parsed.name).toBe("space")
+    expect(Keybind.match(Keybind.parse("space")[0], parsed)).toBe(true)
+  })
+})
