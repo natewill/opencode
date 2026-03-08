@@ -545,7 +545,7 @@ export default function Layout(props: ParentProps) {
     return projects.find((p) => p.worktree === root)
   })
 
-  createEffect(() => {
+  createEffect(function enableWorkspacesOnSandboxOpen() {
     const project = currentProject()
     if (!project) return
     if (project.vcs !== "git") return
@@ -555,7 +555,6 @@ export default function Layout(props: ParentProps) {
     const currDirKey = workspaceKey(currDir)
     const sandboxes = project.sandboxes.map((item) => workspaceKey(item))
     if (!sandboxes.includes(currDirKey)) return
-    // enable workspaces for this project
     layout.sidebar.setWorkspaces(project.worktree, true)
   })
 
