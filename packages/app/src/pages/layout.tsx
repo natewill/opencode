@@ -552,7 +552,9 @@ export default function Layout(props: ParentProps) {
     if (!project.sandboxes?.length) return
     const dir = currentDir()
     if (!dir) return
-    if (!project.sandboxes.some((item) => workspaceKey(item) === workspaceKey(dir))) return
+    const currentDirectoryKey = workspaceKey(dir)
+    const sandboxes = project.sandboxes.map((item) => workspaceKey(item))
+    if (!sandboxes.includes(currentDirectoryKey)) return
     layout.sidebar.setWorkspaces(project.worktree, true)
   })
 
