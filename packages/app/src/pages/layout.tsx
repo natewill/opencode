@@ -555,6 +555,7 @@ export default function Layout(props: ParentProps) {
     const currentDirectoryKey = workspaceKey(dir)
     const sandboxes = project.sandboxes.map((item) => workspaceKey(item))
     if (!sandboxes.includes(currentDirectoryKey)) return
+    // enable workspaces for this project
     layout.sidebar.setWorkspaces(project.worktree, true)
   })
 
