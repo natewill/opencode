@@ -550,11 +550,11 @@ export default function Layout(props: ParentProps) {
     if (!project) return
     if (project.vcs !== "git") return
     if (!project.sandboxes?.length) return
-    const dir = currentDir()
-    if (!dir) return
-    const currentDirectoryKey = workspaceKey(dir)
+    const currDir = currentDir()
+    if (!currDir) return
+    const currDirKey = workspaceKey(currDir)
     const sandboxes = project.sandboxes.map((item) => workspaceKey(item))
-    if (!sandboxes.includes(currentDirectoryKey)) return
+    if (!sandboxes.includes(currDirKey)) return
     // enable workspaces for this project
     layout.sidebar.setWorkspaces(project.worktree, true)
   })
