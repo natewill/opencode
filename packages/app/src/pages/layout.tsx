@@ -545,6 +545,19 @@ export default function Layout(props: ParentProps) {
     return projects.find((p) => p.worktree === root)
   })
 
+  createEffect(function enableWorkspacesOnSandboxOpen() {
+    const project = currentProject()
+    if (!project) return
+    if (project.vcs !== "git") return
+    if (!project.sandboxes?.length) return
+    const currDir = currentDir()
+    if (!currDir) return
+    const currDirKey = workspaceKey(currDir)
+    const sandboxes = project.sandboxes.map((item) => workspaceKey(item))
+    if (!sandboxes.includes(currDirKey)) return
+    layout.sidebar.setWorkspaces(project.worktree, true)
+  })
+
   createEffect(
     on(
       () => ({ ready: pageReady(), layoutReady: layoutReady(), dir: params.dir, list: layout.projects.list() }),
