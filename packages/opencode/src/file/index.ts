@@ -588,11 +588,7 @@ export namespace File {
             }
             if (diff.trim()) {
               const head = await git(["rev-parse", "--verify", "HEAD"], { cwd: Instance.directory })
-              const original = (
-                await git(head.exitCode === 0 ? ["show", `HEAD:${file}`] : ["show", `:${file}`], {
-                  cwd: Instance.directory,
-                })
-              ).text()
+              const original = head.exitCode === 0 ? (await git(["show", `HEAD:${file}`], { cwd: Instance.directory })).text() : ""
               const patch = structuredPatch(file, file, original, content, "old", "new", {
                 context: Infinity,
                 ignoreWhitespace: true,
