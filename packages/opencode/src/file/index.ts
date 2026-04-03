@@ -418,10 +418,16 @@ export namespace File {
         if (Instance.project.vcs !== "git") return []
 
         return yield* Effect.promise(async () => {
+          const head = await git(["rev-parse", "--verify", "HEAD"], { cwd: Instance.directory })
           const diffOutput = (
-            await git(["-c", "core.fsmonitor=false", "-c", "core.quotepath=false", "diff", "--numstat", "HEAD"], {
-              cwd: Instance.directory,
-            })
+            await git(
+              head.exitCode === 0
+                ? ["-c", "core.fsmonitor=false", "-c", "core.quotepath=false", "diff", "--numstat", "HEAD"]
+                : ["-c", "core.fsmonitor=false", "-c", "core.quotepath=false", "diff", "--numstat", "--cached"],
+              {
+                cwd: Instance.directory,
+              },
+            )
           ).text()
 
           const changed: File.Info[] = []
@@ -473,16 +479,27 @@ export namespace File {
 
           const deletedOutput = (
             await git(
-              [
-                "-c",
-                "core.fsmonitor=false",
-                "-c",
-                "core.quotepath=false",
-                "diff",
-                "--name-only",
-                "--diff-filter=D",
-                "HEAD",
-              ],
+              head.exitCode === 0
+                ? [
+                    "-c",
+                    "core.fsmonitor=false",
+                    "-c",
+                    "core.quotepath=false",
+                    "diff",
+                    "--name-only",
+                    "--diff-filter=D",
+                    "HEAD",
+                  ]
+                : [
+                    "-c",
+                    "core.fsmonitor=false",
+                    "-c",
+                    "core.quotepath=false",
+                    "diff",
+                    "--name-only",
+                    "--diff-filter=D",
+                    "--cached",
+                  ],
               {
                 cwd: Instance.directory,
               },
@@ -570,7 +587,12 @@ export namespace File {
               ).text()
             }
             if (diff.trim()) {
-              const original = (await git(["show", `HEAD:${file}`], { cwd: Instance.directory })).text()
+              const head = await git(["rev-parse", "--verify", "HEAD"], { cwd: Instance.directory })
+              const original = (
+                await git(head.exitCode === 0 ? ["show", `HEAD:${file}`] : ["show", `:${file}`], {
+                  cwd: Instance.directory,
+                })
+              ).text()
               const patch = structuredPatch(file, file, original, content, "old", "new", {
                 context: Infinity,
                 ignoreWhitespace: true,

@@ -398,6 +398,24 @@ describe("file/index Filesystem patterns", () => {
   })
 
   describe("File.status()", () => {
+    test("reads staged changes before first commit", async () => {
+      await using tmp = await tmpdir()
+      await $`git init`.cwd(tmp.path).quiet()
+      await $`git config core.fsmonitor false`.cwd(tmp.path).quiet()
+      await fs.writeFile(path.join(tmp.path, "new.txt"), "line\n", "utf-8")
+      await $`git add new.txt`.cwd(tmp.path).quiet()
+
+      await Instance.provide({
+        directory: tmp.path,
+        fn: async () => {
+          const result = await File.status()
+          const entry = result.find((f) => f.path === "new.txt")
+          expect(entry).toBeDefined()
+          expect(entry!.added).toBeGreaterThan(0)
+        },
+      })
+    })
+
     test("detects modified file", async () => {
       await using tmp = await tmpdir({ git: true })
       const filepath = path.join(tmp.path, "file.txt")
@@ -821,6 +839,26 @@ describe("file/index Filesystem patterns", () => {
   })
 
   describe("File.read() - diff/patch", () => {
+    test("uses index as patch base before first commit", async () => {
+      await using tmp = await tmpdir()
+      await $`git init`.cwd(tmp.path).quiet()
+      await $`git config core.fsmonitor false`.cwd(tmp.path).quiet()
+      const file = path.join(tmp.path, "file.txt")
+      await fs.writeFile(file, "one\n", "utf-8")
+      await $`git add file.txt`.cwd(tmp.path).quiet()
+      await fs.writeFile(file, "two\n", "utf-8")
+
+      await Instance.provide({
+        directory: tmp.path,
+        fn: async () => {
+          const result = await File.read("file.txt")
+          expect(result.diff).toBeDefined()
+          expect(result.diff).toContain("one")
+          expect(result.diff).toContain("two")
+        },
+      })
+    })
+
     test("returns diff and patch for modified tracked file", async () => {
       await using tmp = await tmpdir({ git: true })
       const filepath = path.join(tmp.path, "file.txt")

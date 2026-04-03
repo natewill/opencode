@@ -232,9 +232,12 @@ export namespace Worktree {
 
       const setup = Effect.fnUntraced(function* (info: Info) {
         const ctx = yield* InstanceState.context
-        const created = yield* git(["worktree", "add", "--no-checkout", "-b", info.branch, info.directory], {
-          cwd: ctx.worktree,
-        })
+        const head = yield* git(["rev-parse", "--verify", "HEAD"], { cwd: ctx.worktree })
+        const args =
+          head.code === 0
+            ? ["worktree", "add", "--no-checkout", "-b", info.branch, info.directory]
+            : ["worktree", "add", "-b", info.branch, info.directory]
+        const created = yield* git(args, { cwd: ctx.worktree })
         if (created.code !== 0) {
           throw new CreateFailedError({ message: created.stderr || created.text || "Failed to create git worktree" })
         }
@@ -403,6 +406,10 @@ export namespace Worktree {
 
         const branch = entry.branch?.replace(/^refs\/heads\//, "")
         if (branch) {
+          const ref = `refs/heads/${branch}`
+          const exists = yield* git(["show-ref", "--verify", "--quiet", ref], { cwd: Instance.worktree })
+          if (exists.code !== 0) return true
+
           const deleted = yield* git(["branch", "-D", branch], { cwd: Instance.worktree })
           if (deleted.code !== 0) {
             throw new RemoveFailedError({
@@ -549,9 +556,10 @@ export namespace Worktree {
           { concurrency: 2 },
         )
         const localBranch = mainCheck.code === 0 ? "main" : masterCheck.code === 0 ? "master" : ""
+        const head = yield* git(["rev-parse", "--verify", "HEAD"], { cwd: Instance.worktree })
 
         const target = remoteBranch ? `${remote}/${remoteBranch}` : localBranch
-        if (!target) {
+        if (!target && head.code === 0) {
           throw new ResetFailedError({ message: "Default branch not found" })
         }
 
@@ -564,7 +572,7 @@ export namespace Worktree {
         }
 
         yield* gitExpect(
-          ["reset", "--hard", target],
+          target ? ["reset", "--hard", target] : ["reset", "--hard"],
           { cwd: worktreePath },
           (r) => new ResetFailedError({ message: r.stderr || r.text || "Failed to reset worktree to target" }),
         )
