@@ -311,15 +311,15 @@ export namespace LLM {
       },
       maxRetries: input.retries ?? 0,
       messages,
-      model: wrapLanguageModel({
-        model: language,
-        middleware: [
-          {
-            specificationVersion: "v3" as const,
-            async transformParams(args) {
-              if (args.type === "stream") {
-                // @ts-expect-error
-                args.params.prompt = ProviderTransform.message(args.params.prompt, input.model, options)
+        model: wrapLanguageModel({
+          model: language,
+          middleware: [
+            {
+              specificationVersion: "v3" as const,
+              async transformParams(args) {
+                if (args.type === "stream") {
+                  // @ts-expect-error
+                  args.params.prompt = ProviderTransform.message(args.params.prompt, input.model, options)
               }
               return args.params
             },
